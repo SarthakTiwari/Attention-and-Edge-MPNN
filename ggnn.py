@@ -114,6 +114,6 @@ class GGNN(SummationMPNN):
     
 if __name__=='__main__':
    model = GGNN(node_features=75, edge_features=4,message_size=25, message_passes=1, out_features=1)
-   trainer = pl.Trainer(max_epochs=2)
+   trainer = pl.Trainer(max_epochs=600)
    trainer.fit(model)
    trainer.test(ckpt_path=None)
