@@ -1,8 +1,10 @@
 import pandas as pd
+import numpy as np
 import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, random_split
+import pytorch_lightning as pl
 from preprocessing import smile_to_graph,molgraph_collate_fn
 from modules import GraphGather, FeedForwardNetwork
 from emn_aggregation import EMN
@@ -131,7 +133,7 @@ class EMNImplementation(EMN):
     
     
 if __name__=='__main__':
-   model = EMNImplementation(node_features=75, edge_features=4,message_size=25, message_passes=1, out_features=1)
+   model = EMNImplementation(node_features=75, edge_features=4,edge_embedding_size=50, message_passes=8, out_features=1)
    trainer = pl.Trainer(max_epochs=600)
    trainer.fit(model)
-   trainer.test(ckpt_path=None)
+   trainer.test(model=model)
