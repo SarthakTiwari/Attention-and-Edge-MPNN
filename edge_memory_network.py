@@ -11,6 +11,15 @@ from emn_aggregation import EMN
 from torch.utils.data import DataLoader
 criterion = nn.MSELoss()
 
+# commented lines for classification tasks
+
+# criterion = nn.BCELoss()
+# from pytorch_lightning.metrics.classification import AUROC
+# from tensorflow.keras.metrics import AUC
+# m = nn.Sigmoid()
+# from pytorch_lightning.metrics.functional import accuracy
+# metric = AUC(multi_label=True)
+
 torch.manual_seed(1234)
 np.random.seed(1234)
 
@@ -108,6 +117,7 @@ class EMNImplementation(EMN):
     def training_step(self,batch,batch_idx):
         adjacency, nodes, edges, target = batch
         output = self.forward(nodes, edges,adjacency)
+        # output= m(output)
         loss = criterion(output, target)
         logs = {'loss': loss}
         return {'loss': loss, 'log': logs}
@@ -126,13 +136,23 @@ class EMNImplementation(EMN):
     def test_step(self, batch, batch_idx):
         adjacency, nodes, edges, target = batch
         output = self(nodes, edges,adjacency)
+        #output=m(output)
+        #output=(output>=0.5).float()
+
+        #auroc = metric(output, target).numpy()
+        #acc=accuracy(output, target)
+        
         loss = criterion(output, target)
-        return {'test_loss': loss}
+        return {'test_loss': loss # 'test_auroc': auroc,'accu':acc}
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+        #avg_auroc = sum([x['test_auroc'] for x in outputs])/len([x['test_auroc'] for x in outputs])
+        #avg_acc = sum([x['accu'] for x in outputs])/len([x['accu'] for x in outputs])
+        #logs = {'test_auroc': avg_auroc}
+        #print(avg_acc)
         tensorboard_logs = {'test_loss': avg_loss}
-        return {'test_loss': avg_loss, 'log': tensorboard_logs}
+        return {'test_loss': avg_loss, 'log': tensorboard_logs #'test_auroc': avg_auroc, 'log': logs}
     
     
 if __name__=='__main__':
