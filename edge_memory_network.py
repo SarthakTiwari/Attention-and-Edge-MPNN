@@ -11,6 +11,9 @@ from emn_aggregation import EMN
 from torch.utils.data import DataLoader
 criterion = nn.MSELoss()
 
+torch.manual_seed(1234)
+np.random.seed(1234)
+
 
 class EMNImplementation(EMN):
 
