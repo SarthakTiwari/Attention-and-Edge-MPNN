@@ -104,14 +104,14 @@ class EMNImplementation(EMN):
       
     def training_step(self,batch,batch_idx):
         adjacency, nodes, edges, target = batch
-        output = self.forward(adjacency, nodes, edges)
+        output = self.forward(nodes, edges,adjacency)
         loss = criterion(output, target)
         logs = {'loss': loss}
         return {'loss': loss, 'log': logs}
 
     def validation_step(self,batch,batch_idx):
         adjacency, nodes, edges, target = batch
-        output = self.forward(adjacency, nodes, edges)
+        output = self.forward(nodes, edges,adjacency)
         loss = criterion(output, target)
         return {'val_loss':loss}
 
@@ -122,7 +122,7 @@ class EMNImplementation(EMN):
 
     def test_step(self, batch, batch_idx):
         adjacency, nodes, edges, target = batch
-        output = self(adjacency, nodes, edges)
+        output = self(nodes, edges,adjacency)
         loss = criterion(output, target)
         return {'test_loss': loss}
 
