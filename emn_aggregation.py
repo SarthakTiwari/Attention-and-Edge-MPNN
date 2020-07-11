@@ -22,7 +22,7 @@ class EMN(pl.LightningModule):
         raise NotImplementedError
 
 
-    def forward(self, adjacency, nodes, edges):
+    def forward(self,nodes, edges,adjacency):
 
         edges_b_idx, edges_n_idx, edges_nhb_idx = adjacency.nonzero().unbind(-1)
 
