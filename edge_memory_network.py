@@ -143,7 +143,7 @@ class EMNImplementation(EMN):
         #acc=accuracy(output, target)
         
         loss = criterion(output, target)
-        return {'test_loss': loss # 'test_auroc': auroc,'accu':acc}
+        return {'test_loss': loss }# {'test_auroc': auroc,'accu':acc}
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
@@ -152,7 +152,7 @@ class EMNImplementation(EMN):
         #logs = {'test_auroc': avg_auroc}
         #print(avg_acc)
         tensorboard_logs = {'test_loss': avg_loss}
-        return {'test_loss': avg_loss, 'log': tensorboard_logs #'test_auroc': avg_auroc, 'log': logs}
+        return {'test_loss': avg_loss, 'log': tensorboard_logs} #{'test_auroc': avg_auroc, 'log': logs}
     
     
 if __name__=='__main__':
