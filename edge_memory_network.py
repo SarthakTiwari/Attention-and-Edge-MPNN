@@ -156,7 +156,7 @@ class EMNImplementation(EMN):
     
     
 if __name__=='__main__':
-   model = EMNImplementation(node_features=75, edge_features=4,edge_embedding_size=50, message_passes=8, out_features=1)
+   model = EMNImplementation(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1)
    trainer = pl.Trainer(max_epochs=600)
    trainer.fit(model)
    trainer.test(model=model)
