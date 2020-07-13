@@ -22,7 +22,7 @@ from captum.attr import IntegratedGradients
 from preprocessing import smile_to_graph,molgraph_collate_fn
 from  edge_memory_network import EMNImplementation
 
-#model input --> adjacency, nodes, edges, target 
+#model input -->  nodes, edges,adjacency, target 
 
 
 
@@ -117,7 +117,7 @@ if __name__=='__main__':
   #Dataset on which model is trained
   data = pd.read_csv('sider.csv' )
 
-  index=1104                                #change index get molecule specific visualisations 
+  index=1104                                #change index to get molecule specific visualisations 
   target='Hepatobiliary disorders'          # target fixed for a perticular pretrained model
 
   smile=data['smiles'][index]
@@ -143,7 +143,7 @@ if __name__=='__main__':
     
   #Loading pretrained model 
   model = EMNImplementation(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1)
-  checkpoint = torch.load(r"lightning_logs/version_1/checkpoints/epoch=96.ckpt")
+  checkpoint = torch.load(r"checkpoint.ckpt")
   model.load_state_dict(checkpoint['state_dict'])
   
 
