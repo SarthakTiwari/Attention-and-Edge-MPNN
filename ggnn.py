@@ -143,7 +143,7 @@ def run_ggnn(node_features=16, edge_features=4, message_size=20, message_passes=
                  gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim, 
                  gather_emb_depth=gather_att_depth, gather_emb_hidden_dim=gather_att_hidden_dim, 
                  out_depth=out_depth, out_hidden_dim=out_hidden_dim)
-    trainer = pl.Trainer(max_epochs=1,checkpoint_callback=False)
+    trainer = pl.Trainer(max_epochs=200)
     trainer.fit(model)
     evaluation = trainer.test(model=model)
     return evaluation
