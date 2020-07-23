@@ -156,7 +156,7 @@ def run_attnggnn(node_features=16, edge_features=4, message_size=10, message_pas
                  gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim, 
                  gather_emb_depth=gather_att_depth, gather_emb_hidden_dim=gather_att_hidden_dim, 
                  out_depth=out_depth, out_hidden_dim=out_hidden_dim)
-    trainer = pl.Trainer(max_epochs=200,checkpoint_callback=False)
+    trainer = pl.Trainer(max_epochs=200)
     trainer.fit(model)
     evaluation = trainer.test(model=model)
     return evaluation
@@ -185,9 +185,9 @@ def f(x):
 
 
 if __name__=='__main__':
-   opt_emn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization', maximize=True)
-   opt_emn.run_optimization(max_iter=15)
-   opt_emn.save_evaluations("ev_file")
+   opt_attnggnn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization', maximize=True)
+   opt_attnggnn.run_optimization(max_iter=15)
+   opt_attnggnn.save_evaluations("ev_file")
    print("""
    Optimized Parameters:
    \t{0}:\t{1}
@@ -197,10 +197,10 @@ if __name__=='__main__':
    \t{8}:\t{9}
    \t{10}:\t{11}
 
-   """.format(bounds[0]["name"],opt_emn.x_opt[0],
-              bounds[1]["name"],opt_emn.x_opt[1],
-              bounds[2]["name"],opt_emn.x_opt[2],
-              bounds[3]["name"],opt_emn.x_opt[3],
-              bounds[4]["name"],opt_emn.x_opt[4],
-              bounds[5]["name"],opt_emn.x_opt[5],))
-   print("optimized r2: {0}".format(opt_emn.fx_opt))
+   """.format(bounds[0]["name"],opt_attnggnn.x_opt[0],
+              bounds[1]["name"],opt_attnggnn.x_opt[1],
+              bounds[2]["name"],opt_attnggnn.x_opt[2],
+              bounds[3]["name"],opt_attnggnn.x_opt[3],
+              bounds[4]["name"],opt_attnggnn.x_opt[4],
+              bounds[5]["name"],opt_attnggnn.x_opt[5],))
+   print("optimized r2: {0}".format(opt_attnggnn.fx_opt))
