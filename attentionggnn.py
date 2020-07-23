@@ -141,7 +141,7 @@ class AttentionGGNN(AggregationMPNN):
         return {'test_r2': avg_r2, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
     
 #runner fn 
-def run_emn(node_features=16, edge_features=4, message_size=10, message_passes=4, out_features=1,
+def run_attnggnn(node_features=16, edge_features=4, message_size=10, message_passes=4, out_features=1,
                  msg_depth=2, msg_hidden_dim=40,
                  att_depth=2, att_hidden_dim=40,
                  gather_width=40,
@@ -156,7 +156,7 @@ def run_emn(node_features=16, edge_features=4, message_size=10, message_passes=4
                  gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim, 
                  gather_emb_depth=gather_att_depth, gather_emb_hidden_dim=gather_att_hidden_dim, 
                  out_depth=out_depth, out_hidden_dim=out_hidden_dim)
-    trainer = pl.Trainer(max_epochs=1,checkpoint_callback=False)
+    trainer = pl.Trainer(max_epochs=200,checkpoint_callback=False)
     trainer.fit(model)
     evaluation = trainer.test(model=model)
     return evaluation
@@ -173,7 +173,7 @@ bounds = [{'name': 'message_size', 'type': 'discrete',  'domain': (10,20,30)},
 #function to optimize
 def f(x):
     print(x)
-    evaluation = run_emn(
+    evaluation = run_attnggnn(
         message_size = int(x[:,0]),
         message_passes = int(x[:,1]), 
         msg_hidden_dim = int(x[:,2]), 
