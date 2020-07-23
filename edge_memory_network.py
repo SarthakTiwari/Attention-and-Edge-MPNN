@@ -10,6 +10,9 @@ from modules import GraphGather, FeedForwardNetwork
 from emn_aggregation import EMN
 from torch.utils.data import DataLoader
 criterion = nn.MSELoss()
+from sklearn.metrics import r2_score
+metric = r2_score
+import GPyOpt
 
 # commented lines for classification tasks
 
@@ -84,31 +87,34 @@ class EMNImplementation(EMN):
         graph_embeddings = self.gather(hidden_nodes, input_nodes, node_mask)
         return self.out_nn(graph_embeddings)
 
+
     def prepare_data(self):
-        data = pd.read_csv('delaney-processed.csv' )
+        data = pd.read_csv('t_half.csv' )
         data_list=[]
         
         for index in range(len(data)):
-           adjacency, nodes, edges = smile_to_graph(data['smiles'][index])
-           targets = np.expand_dims(data['measured log solubility in mols per litre'][index], axis=0)
+           adjacency, nodes, edges = smile_to_graph(data['Smiles'][index])
+           #targets = data.iloc[index,1:]
+           targets=np.expand_dims(data['Standard Value'][index], axis=0)
            data_list.append(((adjacency, nodes, edges), targets))
 
-        shuff=list(range(len(data)))
+        l=len(data)
+        shuff=list(range(l))
         random.shuffle(shuff)
         data_list1=[data_list[i] for i in shuff ]
-        self.emn_train=tuple(data_list1[:900])
-        self.emn_test=tuple(data_list1[1000:])
-        self.emn_val=tuple(data_list1[900:1000])
+        self.emn_train=tuple(data_list1[:int(l*0.8)])
+        self.emn_val=tuple(data_list1[int(l*0.8):int(l*0.9)])
+        self.emn_test=tuple(data_list1[int(l*0.9):])
 
 
     def train_dataloader(self):
         return DataLoader(self.emn_train, batch_size=50, shuffle=True, collate_fn=molgraph_collate_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.emn_val, batch_size=10, shuffle=False, collate_fn=molgraph_collate_fn)
+        return DataLoader(self.emn_val, batch_size=20, shuffle=False, collate_fn=molgraph_collate_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.emn_test, batch_size=10, shuffle=False, collate_fn=molgraph_collate_fn)
+        return DataLoader(self.emn_test, batch_size=20, shuffle=False, collate_fn=molgraph_collate_fn)
       
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
@@ -141,9 +147,9 @@ class EMNImplementation(EMN):
 
         #auroc = metric(output, target).numpy()
         #acc=accuracy(output, target)
-        
         loss = criterion(output, target)
-        return {'test_loss': loss }# {'test_auroc': auroc,'accu':acc}
+        r2 = metric(output, target)
+        return {'test_r2': r2,'test_loss': loss}# {'test_auroc': auroc,'accu':acc}
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
@@ -151,12 +157,77 @@ class EMNImplementation(EMN):
         #avg_acc = sum([x['accu'] for x in outputs])/len([x['accu'] for x in outputs])
         #logs = {'test_auroc': avg_auroc}
         #print(avg_acc)
-        tensorboard_logs = {'test_loss': avg_loss}
-        return {'test_loss': avg_loss, 'log': tensorboard_logs} #{'test_auroc': avg_auroc, 'log': logs}
+        avg_r2 = sum([x['test_r2'] for x in outputs])/len([x['test_r2'] for x in outputs])
+        print("test_loss",avg_loss)
+        logs = {'test_r2': avg_r2}
+        return {'test_r2': avg_r2, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
     
-    
+
+#runner fn 
+def run_emn(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1,
+            edge_emb_depth=2, edge_emb_hidden_dim=60,
+                 att_depth=2, att_hidden_dim=40,
+                 msg_depth=2, msg_hidden_dim=40,
+                 gather_width=40,
+                 gather_att_depth=2, gather_att_hidden_dim=30,
+                 gather_emb_depth=2, gather_emb_hidden_dim=30,
+                 out_depth=2, out_hidden_dim=40):
+  
+    model = EMNImplementation(node_features=node_features, edge_features=edge_features,edge_embedding_size=edge_embedding_size, message_passes=message_passes, out_features=out_features,
+            edge_emb_depth=edge_emb_depth, edge_emb_hidden_dim=edge_emb_hidden_dim,
+                 att_depth=att_depth, att_hidden_dim=att_hidden_dim,
+                 msg_depth=msg_depth, msg_hidden_dim=att_hidden_dim,
+                 gather_width=gather_width,
+                 gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim,
+                 gather_emb_depth=gather_emb_depth, gather_emb_hidden_dim=gather_att_hidden_dim,
+                 out_depth=out_depth, out_hidden_dim=out_hidden_dim)
+    trainer = pl.Trainer(max_epochs=1,checkpoint_callback=False)
+    trainer.fit(model)
+    evaluation = trainer.test(model=model)
+    return evaluation
+
+bounds = [{'name': 'edge_embedding_size', 'type': 'discrete',  'domain': (30,50)},
+          {'name': 'message_passes',          'type': 'discrete',  'domain': (4,6,8)},
+          {'name': 'edge_emb_hidden_dim',          'type': 'discrete',  'domain': (60,80,120)},
+          {'name': 'att_hidden_dim',           'type': 'discrete',    'domain': (40,60)},
+          {'name': ' gather_width',           'type': 'discrete',    'domain': (30,40,60)},
+          {'name': 'gather_att_hidden_dim',       'type': 'discrete',    'domain': (20,30,40)},
+          {'name': 'out_hidden_dim',           'type': 'discrete',    'domain': (30,40,60)}]
+
+#function to optimize
+def f(x):
+    print(x)
+    evaluation = run_emn(
+        edge_embedding_size = int(x[:,0]),
+        message_passes = int(x[:,1]), 
+        edge_emb_hidden_dim = int(x[:,2]), 
+        att_hidden_dim = int(x[:,3]),
+        gather_width = int(x[:,4]), 
+        gather_att_hidden_dim = int(x[:,5]), 
+        out_hidden_dim = int(x[:,6])
+        )
+    print("r2_score:\t{0}".format(evaluation['test_r2']))
+    return evaluation['test_r2']
+
 if __name__=='__main__':
-   model = EMNImplementation(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1)
-   trainer = pl.Trainer(max_epochs=600)
-   trainer.fit(model)
-   trainer.test(model=model)
+   opt_emn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization', maximize=True)
+   opt_emn.run_optimization(max_iter=15)
+   opt_emn.save_evaluations("ev_file")
+   print("""
+   Optimized Parameters:
+   \t{0}:\t{1}
+   \t{2}:\t{3}
+   \t{4}:\t{5}
+   \t{6}:\t{7}
+   \t{8}:\t{9}
+   \t{10}:\t{11}
+   \t{12}:\t{13}
+   """.format(bounds[0]["name"],opt_emn.x_opt[0],
+              bounds[1]["name"],opt_emn.x_opt[1],
+              bounds[2]["name"],opt_emn.x_opt[2],
+              bounds[3]["name"],opt_emn.x_opt[3],
+              bounds[4]["name"],opt_emn.x_opt[4],
+              bounds[5]["name"],opt_emn.x_opt[5],
+              bounds[6]["name"],opt_emn.x_opt[6]))
+   print("optimized loss: {0}".format(opt_emn.fx_opt))
+
