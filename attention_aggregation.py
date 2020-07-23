@@ -26,7 +26,7 @@ class AggregationMPNN(pl.LightningModule):
     def readout(self, hidden_nodes, input_nodes, node_mask):
         raise NotImplementedError
 
-    def forward(self, adjacency, nodes, edges):
+    def forward(self, nodes, edges, adjacency):
         edge_batch_batch_indices, edge_batch_node_indices, edge_batch_neighbour_indices = adjacency.nonzero().unbind(-1)
 
         node_batch_batch_indices, node_batch_node_indices = adjacency.sum(-1).nonzero().unbind(-1)
