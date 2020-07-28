@@ -23,8 +23,7 @@ def one_of_k_encoding_unk(x, allowable_set):
 
 def atom_features(atom,
                   bool_id_feat=False,
-                  explicit_H=False,
-                  use_chirality=False):
+                  explicit_H=False):
   if bool_id_feat:
     return np.array([atom_to_id(atom)])
   else:
@@ -40,19 +39,22 @@ def atom_features(atom,
         'P',
         'Cl',
         'Br',
+        'I',
+        'H',  # H?
         'Unknown'
-      ]) + [atom.GetDegree(),atom.GetImplicitValence(),atom.GetFormalCharge(), atom.GetNumRadicalElectrons() ,atom.GetIsAromatic()] 
+      ]) + one_of_k_encoding(atom.GetDegree(),
+                             [0, 1, 2, 3, 4, 5, 6, 7]) + \
+              one_of_k_encoding_unk(atom.GetImplicitValence(), [0, 1, 2, 3, 4, 5, 6]) + \
+              [atom.GetFormalCharge(), atom.GetNumRadicalElectrons()] + \
+              one_of_k_encoding_unk(atom.GetHybridization(), [
+                Chem.rdchem.HybridizationType.SP, Chem.rdchem.HybridizationType.SP2,
+                Chem.rdchem.HybridizationType.SP3, Chem.rdchem.HybridizationType.
+                                    SP3D, Chem.rdchem.HybridizationType.SP3D2
+              ]) + [atom.GetIsAromatic()]
+    # In case of explicit hydrogen(QM8, QM9), avoid calling `GetTotalNumHs`
     if not explicit_H:
-      results = results + [atom.GetTotalNumHs()]
-                                            
-    if use_chirality:
-      try:
-        results = results + one_of_k_encoding_unk(
-            atom.GetProp('_CIPCode'),
-            ['R', 'S']) + [atom.HasProp('_ChiralityPossible')]
-      except:
-        results = results + [False, False
-                            ] + [atom.HasProp('_ChiralityPossible')]
+      results = results + one_of_k_encoding_unk(atom.GetTotalNumHs(),
+                                                [0, 1, 2, 3, 4])
 
     return np.array(results)
 
