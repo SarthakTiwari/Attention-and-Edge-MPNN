@@ -136,18 +136,18 @@ class AttentionGGNN(AggregationMPNN):
         #logs = {'test_auroc': avg_auroc}
         #print(avg_acc)
         avg_r2 = sum([x['test_r2'] for x in outputs])/len([x['test_r2'] for x in outputs])
-        print("test_loss",avg_loss)
-        logs = {'test_r2': avg_r2}
-        return {'test_r2': avg_r2, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
+        print("test_r2",avg_r2)
+        logs = {'test_loss': avg_loss}
+        return {'test_loss': avg_loss, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
     
 #runner fn 
-def run_attnggnn(node_features=16, edge_features=4, message_size=10, message_passes=4, out_features=1,
-                 msg_depth=2, msg_hidden_dim=40,
-                 att_depth=2, att_hidden_dim=40,
-                 gather_width=40,
-                 gather_att_depth=2, gather_att_hidden_dim=30, 
-                 gather_emb_depth=2, gather_emb_hidden_dim=30, 
-                 out_depth=2, out_hidden_dim=40):
+def run_attnggnn(node_features=40, edge_features=4, message_size=25, message_passes=8, out_features=1,
+                 msg_depth=4, msg_hidden_dim=120,
+                 att_depth=2, att_hidden_dim=120,
+                 gather_width=100,
+                 gather_att_depth=3, gather_att_hidden_dim=100, 
+                 gather_emb_depth=3, gather_emb_hidden_dim=100, 
+                 out_depth=2, out_hidden_dim=100):
   
     model = AttentionGGNN(node_features=node_features, edge_features=edge_features, message_size=message_size, message_passes=message_passes, out_features=out_features,
                  msg_depth=msg_depth, msg_hidden_dim=msg_hidden_dim,
@@ -156,18 +156,18 @@ def run_attnggnn(node_features=16, edge_features=4, message_size=10, message_pas
                  gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim, 
                  gather_emb_depth=gather_att_depth, gather_emb_hidden_dim=gather_att_hidden_dim, 
                  out_depth=out_depth, out_hidden_dim=out_hidden_dim)
-    trainer = pl.Trainer(max_epochs=200)
+    trainer = pl.Trainer(max_epochs=250)
     trainer.fit(model)
     evaluation = trainer.test(model=model)
     return evaluation
 
 
-bounds = [{'name': 'message_size', 'type': 'discrete',  'domain': (10,20,30)},
+bounds = [{'name': 'message_size', 'type': 'discrete',  'domain': (16,25,40)},
           {'name': 'message_passes',          'type': 'discrete',  'domain': (4,6,8)},
-          {'name': 'msg_hidden_dim',           'type': 'discrete',    'domain': (30,40,60)},
-          {'name': ' gather_width',           'type': 'discrete',    'domain': (30,40,60)},
-          {'name': 'gather_att_hidden_dim',       'type': 'discrete',    'domain': (20,30,40)},
-          {'name': 'out_hidden_dim',           'type': 'discrete',    'domain': (30,40,60)}]
+          {'name': 'msg_hidden_dim',           'type': 'discrete',    'domain': (50,80,120)},
+          {'name': ' gather_width',           'type': 'discrete',    'domain': (60,80,100)},
+          {'name': 'gather_att_hidden_dim',       'type': 'discrete',    'domain': (60,80,100)},
+          {'name': 'out_hidden_dim',           'type': 'discrete',    'domain': (60,80,100)}]
 
 
 #function to optimize
@@ -180,13 +180,13 @@ def f(x):
         gather_width = int(x[:,3]), 
         gather_att_hidden_dim = int(x[:,4]), 
         out_hidden_dim = int(x[:,5]))
-    print("r2_score:\t{0}".format(evaluation['test_r2']))
-    return evaluation['test_r2']
+    print("test_loss:\t{0}".format(evaluation['test_loss']))
+    return evaluation['test_loss']
 
 
 if __name__=='__main__':
-   opt_attnggnn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization', maximize=True)
-   opt_attnggnn.run_optimization(max_iter=15)
+   opt_emn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization',initial_design_numdata=3)
+   opt_emn.run_optimization(max_iter=10,max_time=36000)
    opt_attnggnn.save_evaluations("ev_file")
    print("""
    Optimized Parameters:
@@ -203,4 +203,4 @@ if __name__=='__main__':
               bounds[3]["name"],opt_attnggnn.x_opt[3],
               bounds[4]["name"],opt_attnggnn.x_opt[4],
               bounds[5]["name"],opt_attnggnn.x_opt[5],))
-   print("optimized r2: {0}".format(opt_attnggnn.fx_opt))
+   print("optimized loss: {0}".format(opt_attnggnn.fx_opt))
