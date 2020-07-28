@@ -158,20 +158,21 @@ class EMNImplementation(EMN):
         #logs = {'test_auroc': avg_auroc}
         #print(avg_acc)
         avg_r2 = sum([x['test_r2'] for x in outputs])/len([x['test_r2'] for x in outputs])
-        print("test_loss",avg_loss)
-        logs = {'test_r2': avg_r2}
-        return {'test_r2': avg_r2, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
+        print("test_r2",avg_r2)
+        logs = {'test_loss': avg_loss}
+        return {'test_loss': avg_loss, 'log': logs} #{'test_auroc': avg_auroc, 'log': logs}
+
     
 
 #runner fn 
-def run_emn(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1,
-            edge_emb_depth=2, edge_emb_hidden_dim=60,
-                 att_depth=2, att_hidden_dim=40,
-                 msg_depth=2, msg_hidden_dim=40,
-                 gather_width=40,
-                 gather_att_depth=2, gather_att_hidden_dim=30,
-                 gather_emb_depth=2, gather_emb_hidden_dim=30,
-                 out_depth=2, out_hidden_dim=40):
+def run_emn(node_features=40, edge_features=4,edge_embedding_size=50, message_passes=8, out_features=1,
+            edge_emb_depth=3, edge_emb_hidden_dim=150,
+                 att_depth=3, att_hidden_dim=80,
+                 msg_depth=3, msg_hidden_dim=80,
+                 gather_width=100,
+                 gather_att_depth=3, gather_att_hidden_dim=100,
+                 gather_emb_depth=3, gather_emb_hidden_dim=100,
+                 out_depth=2, out_hidden_dim=100):
   
     model = EMNImplementation(node_features=node_features, edge_features=edge_features,edge_embedding_size=edge_embedding_size, message_passes=message_passes, out_features=out_features,
             edge_emb_depth=edge_emb_depth, edge_emb_hidden_dim=edge_emb_hidden_dim,
@@ -181,18 +182,18 @@ def run_emn(node_features=16, edge_features=4,edge_embedding_size=25, message_pa
                  gather_att_depth=gather_att_depth, gather_att_hidden_dim=gather_att_hidden_dim,
                  gather_emb_depth=gather_emb_depth, gather_emb_hidden_dim=gather_att_hidden_dim,
                  out_depth=out_depth, out_hidden_dim=out_hidden_dim)
-    trainer = pl.Trainer(max_epochs=200,checkpoint_callback=False)
+    trainer = pl.Trainer(max_epochs=250)
     trainer.fit(model)
     evaluation = trainer.test(model=model)
     return evaluation
 
 bounds = [{'name': 'edge_embedding_size', 'type': 'discrete',  'domain': (30,50)},
           {'name': 'message_passes',          'type': 'discrete',  'domain': (4,6,8)},
-          {'name': 'edge_emb_hidden_dim',          'type': 'discrete',  'domain': (60,80,120)},
-          {'name': 'att_hidden_dim',           'type': 'discrete',    'domain': (40,60)},
-          {'name': ' gather_width',           'type': 'discrete',    'domain': (30,40,60)},
-          {'name': 'gather_att_hidden_dim',       'type': 'discrete',    'domain': (20,30,40)},
-          {'name': 'out_hidden_dim',           'type': 'discrete',    'domain': (30,40,60)}]
+          {'name': 'edge_emb_hidden_dim',          'type': 'discrete',  'domain': (80,120,150)},
+          {'name': 'att_hidden_dim',           'type': 'discrete',    'domain': (60,80,100)},
+          {'name': ' gather_width',           'type': 'discrete',    'domain': (60,80,100)},
+          {'name': 'gather_att_hidden_dim',       'type': 'discrete',    'domain': (60,80,100)},
+          {'name': 'out_hidden_dim',           'type': 'discrete',    'domain': (60,80,100)}]
 
 #function to optimize
 def f(x):
@@ -206,12 +207,12 @@ def f(x):
         gather_att_hidden_dim = int(x[:,5]), 
         out_hidden_dim = int(x[:,6])
         )
-    print("r2_score:\t{0}".format(evaluation['test_r2']))
-    return evaluation['test_r2']
+    print("test_loss:\t{0}".format(evaluation['test_loss']))
+    return evaluation['test_loss']
 
 if __name__=='__main__':
-   opt_emn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization', maximize=True)
-   opt_emn.run_optimization(max_iter=15)
+   opt_emn = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds,acquisition_type='EI',evaluator_type='local_penalization',initial_design_numdata=3)
+   opt_emn.run_optimization(max_iter=10,max_time=36000)
    opt_emn.save_evaluations("ev_file")
    print("""
    Optimized Parameters:
