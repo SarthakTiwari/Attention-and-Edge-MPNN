@@ -65,21 +65,20 @@ def visualize_importances(feature_names, importances, title="Feature Importances
     if plot:
         plt.figure(figsize=(20,10))
         plt.bar(x_pos, importances, align='center')
-        plt.xticks(x_pos, feature_names)#,rotation='vertical')
+        plt.xticks(x_pos, feature_names,rotation='vertical')
         plt.xlabel(axis_title)
         plt.title(title)
 
 # make sure feature_list has same len as node feature len
-def visualizations(model,smile,target_value,feature_list,color_map= plt.cm.bwr):
+def visualizations(model,smile,feature_list,color_map= plt.cm.bwr):
     
     model.eval()
 
     adjacency, nodes, edges = smile_to_graph(smile)
-    targets=np.expand_dims(target_value, axis=0)
 
     mols = Chem.MolFromSmiles(smile)
     ig = IntegratedGradients(model)
-    adjacency, nodes, edges, targets=molgraph_collate_fn(np.expand_dims(((adjacency, nodes, edges), targets), axis=0))  # input dimension --> no. of smiles *smiles 
+    adjacency, nodes, edges=molgraph_collate_fn(((adjacency, nodes, edges),)) 
     attr= ig.attribute(nodes,additional_forward_args= (edges,adjacency),target=0 )
 
     attr1=torch.squeeze(attr, dim=0)
@@ -114,16 +113,8 @@ def visualizations(model,smile,target_value,feature_list,color_map= plt.cm.bwr):
 
 
 if __name__=='__main__':
-  #Dataset on which model is trained
-  data = pd.read_csv('sider.csv' )
 
-  index=1104                                #change index to get molecule specific visualisations 
-  target='Hepatobiliary disorders'          # target fixed for a perticular pretrained model
-
-  smile=data['smiles'][index]
-  target_value=data[target][index]
-
-  feature_list=[
+    feature_list=[
         'C',
         'N',
         'O',
@@ -133,16 +124,47 @@ if __name__=='__main__':
         'P',
         'Cl',
         'Br',
-        'Unknown',
-        'Degree',
-        'ImplicitValence',
+        'I',
+        'H',  # H?
+        'Unknown'
+        'Degree_0',
+        'Degree_1',
+        'Degree_2',
+        'Degree_3',
+        'Degree_4', 
+        'Degree_5',
+        'Degree_6',
+        'ImplicitValence_0',
+        'ImplicitValence_1',
+        'ImplicitValence_2',
+        'ImplicitValence_3',
+        'ImplicitValence_4',
+        'ImplicitValence_5',
+        'ImplicitValence_6',
         'FormalCharge',
         'NumRadicalElectrons',
+        'Hybridization_SP'
+        'Hybridization_SP2'
+        'Hybridization_SP3'
+        'Hybridization_SP3D'
+        'Hybridization_SP3D2'
+        'atomic_mass'
         'IsAromatic',
-        'TotalNumHs']
+        'NumHs_0'
+        'NumHs_1'
+        'NumHs_2'
+        'NumHs_3'
+        'NumHs_4']
     
   #Loading pretrained model 
-  model = EMNImplementation(node_features=16, edge_features=4,edge_embedding_size=25, message_passes=4, out_features=1)
+    model = EMNImplementation(node_features=40, edge_features=10,edge_embedding_size=50, message_passes=6, out_features=1,
+                 edge_emb_depth=3, edge_emb_hidden_dim=120,
+                 att_depth=3, att_hidden_dim=80,
+                 msg_depth=3, msg_hidden_dim=80,
+                 gather_width=100,
+                 gather_att_depth=3, gather_att_hidden_dim=80,
+                 gather_emb_depth=3, gather_emb_hidden_dim=80,
+                 out_depth=2, out_hidden_dim=60)
   checkpoint = torch.load(r"checkpoint.ckpt")
   model.load_state_dict(checkpoint['state_dict'])
   
@@ -151,4 +173,4 @@ if __name__=='__main__':
   # molecule visualization with highlighted atoms
   # nodes vs feature matrix visualization
   # nodes attribution score
-  visualizations(model,smile,target_value,feature_list,color_map= plt.cm.bwr)
+  visualizations(model,smile,feature_list,color_map= plt.cm.bwr)
