@@ -89,28 +89,52 @@ def smile_to_graph(smile):
     return adjacency, node_features, edge_features
 
 
-
 def molgraph_collate_fn(data):
+
     n_samples = len(data)
-    (adjacency_0, node_features_0, edge_features_0), targets_0 = data[0]
-    n_nodes_largest_graph = max(map(lambda sample: sample[0][0].shape[0], data))
-    n_node_features = node_features_0.shape[1]
-    n_edge_features = edge_features_0.shape[2]
-    n_targets = len(targets_0)
+    if len(data[0])==2:
+  
+      (adjacency_0, node_features_0, edge_features_0), targets_0 = data[0]
+      n_nodes_largest_graph = max(map(lambda sample: sample[0][0].shape[0], data))
+      n_node_features = node_features_0.shape[1]
+      n_edge_features = edge_features_0.shape[2]
+      n_targets = len(targets_0)
 
-    adjacency_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph)
-    node_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_node_features)
-    edge_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph, n_edge_features)
-    target_tensor = torch.zeros(n_samples,n_targets)
+      adjacency_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph)
+      node_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_node_features)
+      edge_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph, n_edge_features)
+      target_tensor = torch.zeros(n_samples,n_targets)
 
-    for i in range(n_samples):
-        (adjacency, node_features, edge_features), target = data[i]
-        n_nodes = adjacency.shape[0]
+      for i in range(n_samples):
+          (adjacency, node_features, edge_features), target = data[i]
+          n_nodes = adjacency.shape[0]
 
-        adjacency_tensor[i, :n_nodes, :n_nodes] = torch.Tensor(adjacency)
-        node_tensor[i, :n_nodes, :] = torch.Tensor(node_features)
-        edge_tensor[i, :n_nodes, :n_nodes, :] = torch.Tensor(edge_features)
+          adjacency_tensor[i, :n_nodes, :n_nodes] = torch.Tensor(adjacency)
+          node_tensor[i, :n_nodes, :] = torch.Tensor(node_features)
+          edge_tensor[i, :n_nodes, :n_nodes, :] = torch.Tensor(edge_features)
 
-        target_tensor[i] = torch.Tensor(target)
+          target_tensor[i] = torch.Tensor(target)
 
-    return adjacency_tensor, node_tensor, edge_tensor, target_tensor
+      return adjacency_tensor, node_tensor, edge_tensor, target_tensor
+
+    else:
+      (adjacency_0, node_features_0, edge_features_0) = data[0]
+      n_nodes_largest_graph = max(map(lambda sample: sample[0][0].shape[0], data))
+      n_node_features = node_features_0.shape[1]
+      n_edge_features = edge_features_0.shape[2]
+
+
+      adjacency_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph)
+      node_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_node_features)
+      edge_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph, n_edge_features)
+
+      for i in range(n_samples):
+          (adjacency, node_features, edge_features) = data[i]
+          n_nodes = adjacency.shape[0]
+
+          adjacency_tensor[i, :n_nodes, :n_nodes] = torch.Tensor(adjacency)
+          node_tensor[i, :n_nodes, :] = torch.Tensor(node_features)
+          edge_tensor[i, :n_nodes, :n_nodes, :] = torch.Tensor(edge_features)
+
+
+      return adjacency_tensor, node_tensor, edge_tensor
