@@ -29,8 +29,7 @@ class EMN(pl.LightningModule):
         n_edges = edges_n_idx.shape[0]
         adj_of_edge_batch_indices = adjacency.clone().long()
         r = torch.arange(n_edges) + 1  
-        if next(self.parameters()).is_cuda:
-            r = r.cuda()
+
         adj_of_edge_batch_indices[edges_b_idx, edges_n_idx, edges_nhb_idx] = r
 
         ingoing_edges_eb_idx = (torch.cat([
@@ -71,8 +70,7 @@ class EMN(pl.LightningModule):
         node_mask = (adjacency.sum(-1) != 0)
 
         node_sets = torch.zeros(batch_size, n_nodes, max_node_degree, self.edge_embedding_size)
-        if next(self.parameters()).is_cuda:
-            node_sets = node_sets.cuda()
+
 
         edge_batch_edge_memory_indices = torch.cat(
             [torch.arange(row.sum()) for row in adjacency.view(-1, n_nodes)]
