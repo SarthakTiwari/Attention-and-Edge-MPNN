@@ -12,3 +12,4 @@ Paper implementation :-https://jcheminf.biomedcentral.com/track/pdf/10.1186/s133
 ###### Rdkit-2020.03.4
 ###### Pytorch lightning-0.8.5
 ###### captum-0.2.0
+###### GPyOpt-1.2.6
