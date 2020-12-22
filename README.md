@@ -1,6 +1,6 @@
 # Attention-and-Edge-MPNN
-Paper implementation :-https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0407-y
-
+PyTorch Lightning implementation of paper:-https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0407-y
+    with some modifications.
 #### models- Gated graph neural network(Base model), Gated graph neural network with attention, Edge memory network
 
 #### aggregation , attention_aggregation , emn_aggregation     --->  message aggregation classes
